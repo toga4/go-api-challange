@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/toga4/go-api-challange/interfaces/handler"
+	"github.com/toga4/go-api-challange/log"
+	"github.com/toga4/go-api-challange/middleware"
 )
 
 type Env struct {
@@ -25,14 +27,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize logger
+	logger, err := log.NewLogger()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err.Error())
+		os.Exit(1)
+	}
+
 	// Dependency Injection
 	ch := handler.NewChallangeHandler()
 
 	// Routing
 	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	r.Use(chimw.RequestID)
+	r.Use(middleware.WithLogger(logger))
+	r.Use(middleware.RequestLogger)
+	r.Use(chimw.Recoverer)
 	r.Get("/healthz", ch.HandleHealthCheck)
 
 	// Initialize Server

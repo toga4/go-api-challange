@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/toga4/go-api-challange/log"
 	"github.com/unrolled/render"
 )
 
@@ -21,5 +22,6 @@ func NewChallangeHandler() ChallangeHandler {
 }
 
 func (ch *challangeHandler) HandleHealthCheck(w http.ResponseWriter, r *http.Request) {
+	log.R(r).Info("health check")
 	ch.Render.Text(w, http.StatusOK, "alive!")
 }
