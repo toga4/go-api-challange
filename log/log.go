@@ -16,6 +16,14 @@ const (
 	loggerContextKey = contextKey("logger")
 )
 
+func NewLoggerForLocal() (logr.Logger, error) {
+	l, err := zap.NewDevelopment()
+	if err != nil {
+		return logr.Discard(), err
+	}
+	return zapr.NewLogger(l), nil
+}
+
 func NewLogger() (logr.Logger, error) {
 	config := zap.Config{
 		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),

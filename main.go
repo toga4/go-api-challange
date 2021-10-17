@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
+	"github.com/go-logr/logr"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/toga4/go-api-challange/interfaces/handler"
 	"github.com/toga4/go-api-challange/log"
@@ -17,6 +18,7 @@ import (
 )
 
 type Env struct {
+	Env          string `envconfig:"GO_ENV" default:"local"`
 	Port         string `envconfig:"PORT" default:"8000"`
 	GCPProjectID string `envconfig:"GCP_PROJECT_ID"`
 }
@@ -29,7 +31,7 @@ func main() {
 	}
 
 	// Initialize logger
-	logger, err := log.NewLogger()
+	logger, err := newLogger(env.Env)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to initialize logger: %v\n", err.Error())
 		os.Exit(1)
@@ -64,4 +66,12 @@ func main() {
 	// Start server
 	fmt.Fprintf(os.Stderr, "Server listening on port %s.\n", env.Port)
 	fmt.Fprintln(os.Stderr, server.ListenAndServe())
+}
+
+func newLogger(env string) (logr.Logger, error) {
+	if env == "local" {
+		return log.NewLoggerForLocal()
+	} else {
+		return log.NewLogger()
+	}
 }
