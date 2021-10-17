@@ -1,0 +1,66 @@
+name: Build, Push, Make PR to Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**.go"
+      - go.*
+      - .github/workflows/gcp.yaml
+
+env:
+  APP_NAME: go-api-challange
+  GCLOUD_PROJECT: sandbox-toga4-gke
+  GKE_CLUSTER_NAME: sandbox-toga4-gke-cluster01-tokyo
+  GKE_CLUSTER_LOCATION: us-central1-c
+
+jobs:
+  setup-build-push:
+    name: build, push
+    runs-on: ubuntu-latest
+
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # Configure Workload Identity Federation via a credentials file.
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@main
+        with:
+          create_credentials_file: true
+          workload_identity_provider: projects/25913936332/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions-provider
+          service_account: github-actions@sandbox-toga4-gke.iam.gserviceaccount.com
+
+      - name: Authenticate gcloud CLI and Docker
+        id: gcloud
+        run: |
+          gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
+          gcloud --quiet auth configure-docker
+
+      - name: Setup image tag
+        run: |
+          echo "IMAGE_TAG=gcr.io/$GCLOUD_PROJECT/$APP_NAME:$GITHUB_SHA" >> $GITHUB_ENV
+          echo "IMAGE_TAG_LATEST=gcr.io/$GCLOUD_PROJECT/$APP_NAME:latest" >> $GITHUB_ENV
+
+      - name: Setup Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and push container image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_TAG }}
+            ${{ env.IMAGE_TAG_LATEST }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
