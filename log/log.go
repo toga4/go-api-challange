@@ -7,6 +7,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
 type contextKey string
@@ -16,12 +17,30 @@ const (
 )
 
 func NewLogger() (logr.Logger, error) {
-	z, err := zap.NewDevelopment()
+	config := zap.Config{
+		Level:       zap.NewAtomicLevelAt(zap.InfoLevel),
+		Development: false,
+		Encoding:    "json",
+		EncoderConfig: zapcore.EncoderConfig{
+			TimeKey:        "timestamp",
+			LevelKey:       "severity",
+			NameKey:        "logger",
+			MessageKey:     "message",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeLevel:    zapcore.LowercaseLevelEncoder,
+			EncodeTime:     zapcore.RFC3339NanoTimeEncoder,
+			EncodeDuration: zapcore.SecondsDurationEncoder,
+		},
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	l, err := config.Build()
 	if err != nil {
 		return logr.Discard(), err
 	}
 
-	return zapr.NewLogger(z), nil
+	return zapr.NewLogger(l), nil
 }
 
 func NewContext(ctx context.Context, l logr.Logger) context.Context {

@@ -17,7 +17,8 @@ import (
 )
 
 type Env struct {
-	Port string `envconfig:"PORT" default:"8000"`
+	Port         string `envconfig:"PORT" default:"8000"`
+	GCPProjectID string `envconfig:"GCP_PROJECT_ID"`
 }
 
 func main() {
@@ -41,6 +42,7 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(chimw.RequestID)
 	r.Use(middleware.WithLogger(logger))
+	r.Use(middleware.GCPTraceLogger(env.GCPProjectID))
 	r.Use(middleware.RequestLogger)
 	r.Use(chimw.Recoverer)
 	r.Get("/healthz", ch.HandleHealthCheck)
