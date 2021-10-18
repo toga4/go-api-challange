@@ -88,5 +88,5 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git commit -a -m "${{ github.repository }}@$GITHUB_SHA"
-          git push -u origin deploy/$GITHUB_SHA
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/toga4/sandbox-toga4-gke deploy/$GITHUB_SHA
           gh pr create --base main "Deploy to GKE" --fill
