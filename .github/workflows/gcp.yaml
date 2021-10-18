@@ -80,7 +80,7 @@ jobs:
       - name: Update image path
         working-directory: kubernetes
         run: |
-          kustomize edit set image IMAGE_PATH gcr.io/$GCLOUD_PROJECT/$APP_NAME:$GITHUB_SHA
+          kustomize edit set image IMAGE_PATH=gcr.io/$GCLOUD_PROJECT/$APP_NAME:$GITHUB_SHA
 
       - name: Send PR
         run: |
