@@ -12,8 +12,6 @@ on:
 env:
   APP_NAME: go-api-challange
   GCLOUD_PROJECT: sandbox-toga4-gke
-  GKE_CLUSTER_NAME: sandbox-toga4-gke-cluster01-tokyo
-  GKE_CLUSTER_LOCATION: us-central1-c
 
 jobs:
   setup-build-push:
@@ -64,3 +62,28 @@ jobs:
             ${{ env.IMAGE_TAG_LATEST }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  send-pr-to-infra:
+    name: Send PR to Infra repo
+    runs-on: ubuntu-latest
+    needs: setup-build-push
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.PAT }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          repository: toga4/sandbox-toga4-gke
+
+      - name: Update image path
+        working-directory: kubernetes
+        run: |
+          kustomize edit set image IMAGE_PATH gcr.io/$GCLOUD_PROJECT/$APP_NAME:$GITHUB_SHA
+
+      - name: Send PR
+        run: |
+          git checkout -b deploy/${{ github.sha }}
+          git commit -a -m "${{ github.repository }}@${{ github.sha }}"
+          gh pr create --base main "Deploy to GKE" --fill
