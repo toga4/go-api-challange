@@ -15,12 +15,14 @@ import (
 	"github.com/toga4/go-api-challange/interfaces/handler"
 	"github.com/toga4/go-api-challange/log"
 	"github.com/toga4/go-api-challange/middleware"
+	"github.com/toga4/go-api-challange/usecase"
 )
 
 type Env struct {
 	Env          string `envconfig:"GO_ENV" default:"local"`
 	Port         string `envconfig:"PORT" default:"8000"`
 	GCPProjectID string `envconfig:"GCP_PROJECT_ID"`
+	HostURI      string `envconfig:"HOST_URI" default:"http://localhost:8000"`
 }
 
 func main() {
@@ -38,7 +40,8 @@ func main() {
 	}
 
 	// Dependency Injection
-	ch := handler.NewChallangeHandler()
+	cu := usecase.NewChallangeUsecase(env.HostURI)
+	ch := handler.NewChallangeHandler(cu)
 
 	// Routing
 	r := chi.NewRouter()
@@ -49,6 +52,7 @@ func main() {
 	r.Use(chimw.Recoverer)
 	r.Get("/healthz", ch.HandleHealthCheck)
 	r.Get("/", ch.HandleHello)
+	r.Get("/delegate", ch.HandleDelegate)
 
 	// Initialize Server
 	server := &http.Server{Addr: ":" + env.Port, Handler: r}

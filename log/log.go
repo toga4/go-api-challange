@@ -10,12 +10,6 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-type contextKey string
-
-const (
-	loggerContextKey = contextKey("logger")
-)
-
 func NewLoggerForLocal() (logr.Logger, error) {
 	l, err := zap.NewDevelopment()
 	if err != nil {
@@ -52,7 +46,7 @@ func NewLogger() (logr.Logger, error) {
 }
 
 func NewContext(ctx context.Context, l logr.Logger) context.Context {
-	return context.WithValue(ctx, loggerContextKey, l)
+	return logr.NewContext(ctx, l)
 }
 
 func R(r *http.Request, keysAndValues ...interface{}) logr.Logger {
@@ -60,9 +54,6 @@ func R(r *http.Request, keysAndValues ...interface{}) logr.Logger {
 }
 
 func C(ctx context.Context, keysAndValues ...interface{}) logr.Logger {
-	l, ok := ctx.Value(loggerContextKey).(logr.Logger)
-	if !ok {
-		panic("could not find logr.Logger from context")
-	}
+	l := logr.FromContextOrDiscard(ctx)
 	return l.WithValues(keysAndValues...)
 }
