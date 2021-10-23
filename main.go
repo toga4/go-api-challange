@@ -48,6 +48,7 @@ func main() {
 	r.Use(middleware.RequestLogger)
 	r.Use(chimw.Recoverer)
 	r.Get("/healthz", ch.HandleHealthCheck)
+	r.Get("/", ch.HandleHello)
 
 	// Initialize Server
 	server := &http.Server{Addr: ":" + env.Port, Handler: r}
